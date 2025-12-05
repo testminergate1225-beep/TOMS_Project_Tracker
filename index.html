@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project Developments Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bar-bg: #1f2937;
+      --bar-fill: #60a5fa;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Segoe UI Emoji", "Segoe UI Symbol";
+      background: radial-gradient(1200px 600px at 20% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+      color: var(--text);
+    }
+
+    header {
+      padding: 40px 24px 20px;
+      display: grid;
+      gap: 10px;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+    .auth-actions {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px 24px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .auth-actions .btn,
+    .auth-actions .btn.secondary {
+      flex: 1 1 200px;
+    }
+    .welcome-banner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      background: rgba(34, 197, 94, 0.15);
+      color: #bbf7d0;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      display: none;
+    }
+    .welcome-banner.active {
+      display: block;
+    }
+    .project-switcher {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px 24px;
+      display: grid;
+      gap: 8px;
+    }
+    .project-switcher .switcher-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+    @media (max-width: 640px) {
+      .project-switcher .switcher-row { grid-template-columns: 1fr; }
+    }
+    .project-switcher .helper {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .section-picker {
+      margin-top: 12px;
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid #1f2937;
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 14px;
+    }
+    .section-picker[hidden] { display: none; }
+    .section-picker__header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .section-picker__title {
+      margin: 0;
+      font-size: 1rem;
+    }
+    .section-picker__helper {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .section-picker__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+    .section-picker__item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: #0b1325;
+      gap: 14px;
+    }
+    .section-picker__label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+    .section-picker__meta {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .section-picker__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid #1f2937;
+      appearance: none;
+      background: #0b1325;
+      position: relative;
+    }
+    .check:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .check:checked::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 2px solid #0b1325;
+      border-top: none;
+      border-right: none;
+      transform: rotate(-45deg);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .edit-title {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid #1f2937;
+      background: #0b1325;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .edit-title svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+    .inline-title-editor {
+      margin-top: 12px;
+      display: none;
+      gap: 10px;
+    }
+    .inline-title-editor.active {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+    @media (max-width: 640px) {
+      .inline-title-editor.active {
+        grid-template-columns: 1fr;
+      }
+    }
+    .logo {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      box-shadow: var(--shadow);
+    }
+    h1 { margin: 0; font-size: 1.75rem; letter-spacing: 0.2px; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .info-trigger { position: relative; }
+    .pill {
+      background: #0b1325;
+      border: 1px solid #1e293b;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+    }
+    .btn {
+      background: var(--accent);
+      color: #062a3a;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
+    }
+    .btn.secondary {
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .btn:active { transform: translateY(1px); }
+
+    .info-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 220px;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      background: #0b1325;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 6px;
+      z-index: 10;
+    }
+    .info-menu[hidden] { display: none; }
+    .info-menu button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .info-menu button:hover {
+      border-color: #1f2937;
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: repeat(6, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: repeat(1, 1fr); }
+    }
+
+    .page-actions {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .card {
+      grid-column: span 4;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
+      border: 1px solid #1f2937;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card header {
+      padding: 0;
+      margin: 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .title {
+      font-weight: 700; letter-spacing: 0.2px;
+    }
+    .status {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+    }
+    .status.ontrack { background: rgba(34, 197, 94, 0.12); color: var(--success); }
+    .status.atrisk  { background: rgba(245, 158, 11, 0.12); color: var(--warning); }
+    .status.delayed { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+
+    .meta {
+      display: flex; gap: 14px; color: var(--muted); font-size: 0.9rem;
+    }
+
+    .progress-wrap { display: grid; gap: 8px; }
+    .progress-bar {
+      height: 11px;
+      background: var(--bar-bg);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #1f2937;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #60a5fa, #22d3ee);
+      transition: width 500ms ease;
+    }
+    .progress-value {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 0.95rem;
+    }
+    .progress-value .percent { font-weight: 800; color: #93c5fd; }
+    .progress-value .label   { color: var(--muted); }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .controls.single { grid-template-columns: auto; justify-content: flex-end; }
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      outline: none;
+    }
+    .select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+    .footnote { color: var(--muted); font-size: 0.85rem; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute; inset: -80px -80px auto auto;
+      width: 220px; height: 220px;
+      background: radial-gradient(120px 120px at 50% 50%, rgba(56,189,248,0.18), transparent 70%);
+      transform: rotate(15deg);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-actions" role="region" aria-label="Account actions">
+    <button class="btn" id="loginButton">Login</button>
+    <button class="btn secondary" id="addUserButton">Add user account</button>
+  </div>
+  <div class="welcome-banner" id="welcomeBanner" role="status" aria-live="polite" hidden></div>
+  <div class="project-switcher" role="region" aria-label="Saved projects">
+    <div class="switcher-row">
+      <label class="sr-only" for="projectSelect">Saved projects</label>
+      <select class="select" id="projectSelect" aria-label="Saved projects"></select>
+      <button class="btn secondary" id="sectionPickerToggle" aria-expanded="false" aria-controls="sectionPicker">Project Selection</button>
+    </div>
+    <p class="helper">Project updates are managed in the secure dashboard. This view reflects the active project only.</p>
+    <div class="section-picker" id="sectionPicker" hidden role="region" aria-label="Select sections">
+      <div class="section-picker__header">
+        <div>
+          <p class="section-picker__title">Include Sections</p>
+          <p class="section-picker__helper">Toggle sections below; checked entries become part of the next saved project.</p>
+        </div>
+        <button class="btn secondary" id="resetSections" type="button">Reset List</button>
+      </div>
+      <ul class="section-picker__list" id="sectionPickerList"></ul>
+      <div class="section-picker__actions">
+        <button class="btn secondary" id="closeSectionPicker" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <div class="title-row">
+          <h1 id="projectTitle">Project Developments</h1>
+          <button class="edit-title" id="editTitleBtn" aria-label="Edit project name" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92.83l-.83-.83 9.19-9.19.83.83-9.19 9.19zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+            </svg>
+          </button>
+        </div>
+        <form class="inline-title-editor" id="titleForm">
+          <label class="sr-only" for="titleInput">Project Title</label>
+          <input class="input" id="titleInput" type="text" placeholder="Edit current project title" autocomplete="off" />
+          <button class="btn" type="submit">Save</button>
+          <button class="btn secondary" type="button" id="cancelTitleEdit">Cancel</button>
+        </form>
+        <div class="subtitle">Live % completeness for key disciplines</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <span class="pill">Baseline: v1.2</span>
+      <span class="pill">Last update: <span id="lastUpdate">—</span></span>
+      <div class="info-trigger">
+        <button class="btn secondary" id="projectInfoToggle" aria-expanded="false" aria-controls="projectInfoMenu">Project Info</button>
+        <div class="info-menu" id="projectInfoMenu" hidden>
+          <button class="menu-item" data-route="electrical.html">Electrical Section</button>
+          <button class="menu-item" data-route="architectural.html">Architectural Section</button>
+          <button class="menu-item" data-route="mechanical.html">Mechanical Section</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid" id="cards">
+      <article class="card" data-key="electrical">
+        <header>
+          <div class="title">Electrical</div>
+          <div class="status" id="status-electrical">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: E-Team</span>
+          <span>Scope: LV/MV, Lighting, Controls</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-electrical">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Electrical progress">
+            <div class="progress-fill" id="bar-electrical"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="electrical">Open Section</button>
+        </div>
+        <div class="footnote">Panelboards, lighting fixtures, and addressable LED rollout status.</div>
+      </article>
+
+      <article class="card" data-key="architectural">
+        <header>
+          <div class="title">Architectural</div>
+          <div class="status" id="status-architectural">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: A-Team</span>
+          <span>Scope: Envelope, Interiors, Finishes</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-architectural">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Architectural progress">
+            <div class="progress-fill" id="bar-architectural"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="architectural">Open Section</button>
+        </div>
+        <div class="footnote">Envelope systems, interior fit-out, and public realm deliverables.</div>
+      </article>
+
+      <article class="card" data-key="mechanical">
+        <header>
+          <div class="title">Mechanical</div>
+          <div class="status" id="status-mechanical">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: M-Team</span>
+          <span>Scope: HVAC, Plumbing, Fire Protection</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-mechanical">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Mechanical progress">
+            <div class="progress-fill" id="bar-mechanical"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="mechanical">Open Section</button>
+        </div>
+        <div class="footnote">Air systems, hydronics, suppression, and automation metrics.</div>
+      </article>
+    </section>
+    <div class="page-actions">
+      <button class="btn" id="viewCompletedProjects">Completed Projects</button>
+      <button class="btn" id="modifyProject">Modify Project</button>
+    </div>
+  </main>
+
+  <script src="state.js"></script>
+  <script>
+    (function () {
+      const {
+        SECTION_ORDER,
+        SECTION_DEFS,
+        loadProjectState,
+        persistProjectState,
+        fmtDate,
+        statusClass,
+        getSectionPercent,
+        getActiveProject,
+        setActiveProject,
+        listProjects,
+        touchProject,
+        isSectionEnabled
+      } = window.ProjectData;
+
+      let state = loadProjectState();
+
+      const AUTH_KEY = 'projectDashboardAuth';
+      const LOGIN_PAGE = 'login.html';
+      const WELCOME_KEY = 'projectDashboardWelcomeName';
+      const USER_DASHBOARD = 'user_index.html';
+
+      const isAuthenticated = () => {
+        try {
+          const localValue = window.localStorage && window.localStorage.getItem(AUTH_KEY);
+          const sessionValue = window.sessionStorage && window.sessionStorage.getItem(AUTH_KEY);
+          return localValue === 'granted' || sessionValue === 'granted';
+        } catch (error) {
+          return false;
+        }
+      };
+
+      const redirectToLogin = () => {
+        const target = encodeURIComponent(USER_DASHBOARD);
+        window.location.href = `${LOGIN_PAGE}?redirect=${target}`;
+      };
+
+      const ensureAuthenticated = () => {
+        if (isAuthenticated()) { return true; }
+        redirectToLogin();
+        return false;
+      };
+
+      const guardPublicButtons = () => {
+        const ALLOWED_IDS = new Set(['loginButton', 'addUserButton']);
+        document.addEventListener('click', (event) => {
+          const button = event.target.closest('button');
+          if (!button) { return; }
+          if (ALLOWED_IDS.has(button.id)) { return; }
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          redirectToLogin();
+        }, true);
+      };
+
+      const FALLBACK_SECTION_KEYS = ['electrical', 'architectural', 'mechanical'];
+      const FALLBACK_METADATA = {
+        electrical: {
+          title: 'Electrical Section',
+          summary: 'Power distribution, lighting, and control scopes.'
+        },
+        architectural: {
+          title: 'Architectural Section',
+          summary: 'Envelope, interior finishes, and public realm.'
+        },
+        mechanical: {
+          title: 'Mechanical Section',
+          summary: 'HVAC, plumbing, and fire protection packages.'
+        },
+        custom: {
+          title: 'Custom Section',
+          summary: 'Custom workstreams require extra setup (coming soon).'
+        }
+      };
+
+      const dedupeKeys = (list = []) => Array.from(new Set((list || []).filter(Boolean)));
+      const getBaseSectionKeys = () => {
+        const source = Array.isArray(SECTION_ORDER) && SECTION_ORDER.length
+          ? SECTION_ORDER
+          : FALLBACK_SECTION_KEYS;
+        const sanitized = dedupeKeys(source);
+        return sanitized.length ? sanitized : [...FALLBACK_SECTION_KEYS];
+      };
+
+      let selectedSections = getBaseSectionKeys();
+      const supportsCustomSection = Array.isArray(SECTION_ORDER) && SECTION_ORDER.includes('custom');
+
+      const buildPickerEntries = () => {
+        const keys = getBaseSectionKeys();
+        const entries = keys.map((key) => {
+          const definition = SECTION_DEFS && SECTION_DEFS[key];
+          const fallback = FALLBACK_METADATA[key];
+          const title = definition?.title
+            ? `${definition.title} Section`
+            : fallback?.title || `${key} Section`;
+          const summary = definition?.summary || fallback?.summary || 'Track progress for this workstream.';
+          return { key, title, summary, disabled: false };
+        });
+
+        if (!entries.find((entry) => entry.key === 'custom')) {
+          entries.push({
+            key: 'custom',
+            title: FALLBACK_METADATA.custom.title,
+            summary: supportsCustomSection
+              ? 'Custom workstreams can be toggled like other sections.'
+              : FALLBACK_METADATA.custom.summary,
+            disabled: !supportsCustomSection
+          });
+        }
+        return entries;
+      };
+
+      const enforceSelectionGuard = (entries) => {
+        const allowed = entries.filter((entry) => !entry.disabled).map((entry) => entry.key);
+        const filtered = dedupeKeys(selectedSections).filter((key) => allowed.includes(key));
+        selectedSections = filtered.length ? filtered : [...allowed];
+      };
+
+      const handleSectionToggle = (key, checked, checkbox) => {
+        if (checked) {
+          if (!selectedSections.includes(key)) {
+            selectedSections = dedupeKeys([...selectedSections, key]);
+          }
+          render();
+          return;
+        }
+        if (selectedSections.length === 1) {
+          checkbox.checked = true;
+          alert('At least one section must remain selected.');
+          return;
+        }
+        selectedSections = selectedSections.filter((value) => value !== key);
+        render();
+      };
+
+      const renderSectionPicker = () => {
+        const list = document.getElementById('sectionPickerList');
+        if (!list) { return; }
+        const entries = buildPickerEntries();
+        enforceSelectionGuard(entries);
+        list.innerHTML = entries.map((entry) => {
+          const checkboxId = `section-check-${entry.key}`;
+          return `
+            <li class="section-picker__item">
+              <label class="section-picker__label" for="${checkboxId}">
+                <input type="checkbox" class="check" id="${checkboxId}" data-section="${entry.key}" ${entry.disabled ? 'disabled' : ''} />
+                ${entry.title}
+              </label>
+              <span class="section-picker__meta">${entry.summary}</span>
+            </li>
+          `;
+        }).join('');
+
+        entries.forEach((entry) => {
+          const checkbox = document.getElementById(`section-check-${entry.key}`);
+          if (!checkbox) { return; }
+          checkbox.checked = selectedSections.includes(entry.key) && !entry.disabled;
+          checkbox.addEventListener('change', () => handleSectionToggle(entry.key, checkbox.checked, checkbox));
+        });
+      };
+
+      const closeSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        const toggle = document.getElementById('sectionPickerToggle');
+        if (!picker) { return; }
+        if (!picker.hasAttribute('hidden')) {
+          picker.setAttribute('hidden', '');
+        }
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      const openSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        const toggle = document.getElementById('sectionPickerToggle');
+        if (!picker) { return; }
+        renderSectionPicker();
+        picker.removeAttribute('hidden');
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      };
+
+      const toggleSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        if (!picker) { return; }
+        if (picker.hasAttribute('hidden')) {
+          openSectionPicker();
+        } else {
+          closeSectionPicker();
+        }
+      };
+
+      const getPendingSectionSelection = () => {
+        const allowed = new Set(getBaseSectionKeys());
+        return dedupeKeys(selectedSections).filter((key) => allowed.has(key));
+      };
+
+      const computeSelectionFilter = () => {
+        const pending = getPendingSectionSelection();
+        const base = getBaseSectionKeys();
+        if (pending.length === base.length) {
+          const baseSet = new Set(base);
+          const differs = pending.some((key) => !baseSet.has(key));
+          if (!differs) {
+            return null;
+          }
+        }
+        return new Set(pending);
+      };
+
+      const currentProject = () => getActiveProject(state);
+
+      let isEditingTitle = false;
+
+      const applyTitleEditorState = () => {
+        const form = document.getElementById('titleForm');
+        if (form) {
+          form.classList.toggle('active', isEditingTitle);
+        }
+        const editButton = document.getElementById('editTitleBtn');
+        if (editButton) {
+          editButton.setAttribute('aria-pressed', isEditingTitle ? 'true' : 'false');
+        }
+      };
+
+      const openTitleEditor = () => {
+        isEditingTitle = true;
+        applyTitleEditorState();
+        const input = document.getElementById('titleInput');
+        if (input) {
+          window.requestAnimationFrame(() => {
+            input.focus();
+            input.select();
+          });
+        }
+      };
+
+      const closeTitleEditor = () => {
+        isEditingTitle = false;
+        applyTitleEditorState();
+        const input = document.getElementById('titleInput');
+        const project = currentProject();
+        if (input && project) {
+          input.value = project.title;
+        }
+      };
+
+      const showWelcomeMessage = () => {
+        const banner = document.getElementById('welcomeBanner');
+        if (!banner) { return; }
+        let welcomeName = '';
+        try {
+          if (window.sessionStorage) {
+            welcomeName = window.sessionStorage.getItem(WELCOME_KEY) || '';
+          }
+        } catch (error) {
+          welcomeName = '';
+        }
+
+        if (welcomeName) {
+          banner.textContent = `Welcome ${welcomeName} you can now update the Project Dashboard`;
+          banner.classList.add('active');
+          banner.removeAttribute('hidden');
+          try {
+            window.sessionStorage && window.sessionStorage.removeItem(WELCOME_KEY);
+          } catch (error) {
+            // ignore storage removal issues
+          }
+        } else {
+          banner.classList.remove('active');
+          banner.setAttribute('hidden', '');
+          banner.textContent = '';
+        }
+      };
+
+      const syncProjectSelect = () => {
+        const select = document.getElementById('projectSelect');
+        if (!select) { return; }
+        const active = currentProject();
+        const options = listProjects(state)
+          .map((project) => `<option value="${project.id}">${project.title}</option>`)
+          .join('');
+        select.innerHTML = options;
+        if (active) {
+          select.value = active.id;
+        }
+      };
+
+      const render = () => {
+        const project = currentProject();
+        if (!project) { return; }
+        const selectionFilter = computeSelectionFilter();
+        SECTION_ORDER.forEach((key) => {
+          const card = document.querySelector(`[data-key="${key}"]`);
+          const enabled = isSectionEnabled(project, key);
+          const selectionAllowed = !selectionFilter || selectionFilter.has(key);
+          const showCard = enabled && selectionAllowed;
+
+          if (card) {
+            if (showCard) {
+              card.removeAttribute('hidden');
+              card.setAttribute('aria-hidden', 'false');
+            } else {
+              card.setAttribute('hidden', '');
+              card.setAttribute('aria-hidden', 'true');
+            }
+          }
+
+          if (!showCard) { return; }
+
+          const section = project.sections[key];
+          const pct = getSectionPercent(section);
+
+          const bar = document.getElementById(`bar-${key}`);
+          const label = document.getElementById(`percent-${key}`);
+          const status = document.getElementById(`status-${key}`);
+
+          if (bar) { bar.style.width = pct + '%'; }
+          if (label) { label.textContent = pct + '%'; }
+          if (status) {
+            const st = statusClass(pct);
+            status.textContent = st.text;
+            status.classList.remove('ontrack', 'atrisk', 'delayed');
+            status.classList.add(st.cls);
+          }
+
+          const footnote = card ? card.querySelector('.footnote') : null;
+          if (footnote && section && section.summary) {
+            footnote.textContent = section.summary;
+          }
+        });
+
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl) {
+          lastUpdateEl.textContent = fmtDate(new Date(project.lastUpdate));
+        }
+
+        const titleEl = document.getElementById('projectTitle');
+        if (titleEl) { titleEl.textContent = project.title; }
+
+        const input = document.getElementById('titleInput');
+        if (input && !isEditingTitle) {
+          input.value = project.title;
+        }
+
+        applyTitleEditorState();
+
+        syncProjectSelect();
+      };
+
+      const saveAndRender = () => {
+        persistProjectState(state);
+        render();
+      };
+
+      const wire = () => {
+        const editTitleBtn = document.getElementById('editTitleBtn');
+        if (editTitleBtn) {
+          editTitleBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (isEditingTitle) {
+              closeTitleEditor();
+            } else {
+              openTitleEditor();
+            }
+          });
+        }
+
+        const titleForm = document.getElementById('titleForm');
+        if (titleForm) {
+          titleForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!ensureAuthenticated()) { return; }
+            const input = document.getElementById('titleInput');
+            if (!input) { return; }
+            const value = input.value.trim();
+            if (!value) {
+              alert('Please enter a project title.');
+              return;
+            }
+            const project = currentProject();
+            if (!project) { return; }
+            project.title = value;
+            touchProject(project);
+            closeTitleEditor();
+            saveAndRender();
+          });
+        }
+
+        const cancelTitleEdit = document.getElementById('cancelTitleEdit');
+        if (cancelTitleEdit) {
+          cancelTitleEdit.addEventListener('click', (event) => {
+            event.preventDefault();
+            closeTitleEditor();
+          });
+        }
+
+        const loginButton = document.getElementById('loginButton');
+        if (loginButton) {
+          loginButton.addEventListener('click', () => {
+            redirectToLogin();
+          });
+        }
+
+        const addUserButton = document.getElementById('addUserButton');
+        if (addUserButton) {
+          addUserButton.addEventListener('click', () => {
+            window.location.href = 'saved_user_accounts.html';
+          });
+        }
+
+        document.querySelectorAll('[data-open]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const key = button.getAttribute('data-open');
+            const project = currentProject();
+            const section = project?.sections[key];
+            window.location.href = section?.file || `${key}.html`;
+          });
+        });
+
+        const toggle = document.getElementById('projectInfoToggle');
+        const menu = document.getElementById('projectInfoMenu');
+
+        const closeMenu = () => {
+          if (!menu) { return; }
+          if (!menu.hasAttribute('hidden')) {
+            menu.setAttribute('hidden', '');
+          }
+          if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+          }
+        };
+
+        if (toggle && menu) {
+          toggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (menu.hasAttribute('hidden')) {
+              menu.removeAttribute('hidden');
+              toggle.setAttribute('aria-expanded', 'true');
+            } else {
+              closeMenu();
+            }
+          });
+
+          menu.addEventListener('click', (event) => event.stopPropagation());
+          document.addEventListener('click', closeMenu);
+        }
+
+        document.querySelectorAll('[data-route]').forEach((item) => {
+          item.addEventListener('click', () => {
+            const route = item.getAttribute('data-route');
+            closeMenu();
+            if (route) {
+              window.location.href = route;
+            }
+          });
+        });
+
+        const projectSelect = document.getElementById('projectSelect');
+        if (projectSelect) {
+          projectSelect.addEventListener('change', () => {
+            setActiveProject(state, projectSelect.value);
+            closeTitleEditor();
+            saveAndRender();
+          });
+        }
+
+        const pickerToggle = document.getElementById('sectionPickerToggle');
+        if (pickerToggle) {
+          pickerToggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            toggleSectionPicker();
+          });
+        }
+
+        const closePickerBtn = document.getElementById('closeSectionPicker');
+        if (closePickerBtn) {
+          closePickerBtn.addEventListener('click', () => {
+            closeSectionPicker();
+          });
+        }
+
+        const resetPickerBtn = document.getElementById('resetSections');
+        if (resetPickerBtn) {
+          resetPickerBtn.addEventListener('click', () => {
+            selectedSections = getBaseSectionKeys();
+            renderSectionPicker();
+            render();
+          });
+        }
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            closeSectionPicker();
+            if (isEditingTitle) {
+              closeTitleEditor();
+            }
+          }
+        });
+
+        const modifyProjectBtn = document.getElementById('modifyProject');
+        if (modifyProjectBtn) {
+          modifyProjectBtn.addEventListener('click', () => {
+            if (!ensureAuthenticated()) { return; }
+            window.location.href = 'delete_project.html';
+          });
+        }
+
+        const completedProjectsBtn = document.getElementById('viewCompletedProjects');
+        if (completedProjectsBtn) {
+          completedProjectsBtn.addEventListener('click', () => {
+            window.location.href = 'completed_project.html';
+          });
+        }
+
+        renderSectionPicker();
+        closeSectionPicker();
+      };
+
+      render();
+      guardPublicButtons();
+      wire();
+      showWelcomeMessage();
+    })();
+  </script>
+</body>
+
