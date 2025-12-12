@@ -115,10 +115,11 @@ TOMS Project Tracker is a web-based project management dashboard that tracks com
 
 ### Authentication & Security
 
-1. **Authentication**:
-   - Check authentication status using `isAuthenticated()` function
-   - Use `ensureAuthenticated()` to protect actions requiring login
+1. **Authentication Pattern** (implement in each HTML file as needed):
+   - Check authentication status using `isAuthenticated()` pattern
+   - Use `ensureAuthenticated()` pattern to protect actions requiring login
    - Store auth state in both localStorage (persistent) and sessionStorage (session-only)
+   - These are local patterns implemented in each page, not global utilities from state.js
 
 2. **Storage Keys**:
    - `projectDashboardAuth`: Authentication state
@@ -131,13 +132,19 @@ TOMS Project Tracker is a web-based project management dashboard that tracks com
 
 ### Data Structures
 
-1. **Project Object**:
+1. **Project Object** (as defined in state.js):
    ```javascript
    {
-     id: string,
-     title: string,
-     lastUpdate: timestamp,
-     sections: {
+     id: string,                    // Unique project identifier
+     title: string,                 // Project name
+     lastUpdate: timestamp,         // ISO 8601 timestamp
+     lastUpdatedBy: string,         // User who last updated
+     enabledSections: {             // Which sections are enabled
+       electrical: boolean,
+       architectural: boolean,
+       mechanical: boolean
+     },
+     sections: {                    // Section data (only for enabled sections)
        electrical: { items: [...], summary: string },
        architectural: { items: [...], summary: string },
        mechanical: { items: [...], summary: string }
