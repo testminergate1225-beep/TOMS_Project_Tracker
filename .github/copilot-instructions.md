@@ -122,9 +122,10 @@ TOMS Project Tracker is a web-based project management dashboard that tracks com
    - These are local patterns implemented in each page, not global utilities from state.js
 
 2. **Storage Keys**:
-   - `projectDashboardAuth`: Authentication state
-   - `projectDashboardWelcomeName`: Welcome message name
-   - `projectDashboardActiveUser`: Active user identifier
+   - `projectDashboardAuth`: Authentication state (localStorage and sessionStorage)
+   - `projectDashboardWelcomeName`: Welcome message name (sessionStorage only)
+   - `projectDashboardActiveUser`: Active user identifier (localStorage and sessionStorage)
+   - `projectDashboardState`: Main project state data (localStorage only, managed by state.js)
 
 3. **Page Guards**:
    - Public pages should call `guardPublicButtons()` to protect unauthorized actions
