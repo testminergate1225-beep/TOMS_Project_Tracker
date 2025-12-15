@@ -111,9 +111,9 @@
     <p class="helper">Use your Login account.</p> 
   </div>
   <script>
-    (function () {
+    (async function () {
       const USERS_KEY = 'projectDashboardAccounts';
-      const DEFAULT_ACCOUNT = { username: 'Admin', password: 'T0ms1234' };
+      const DEFAULT_SECRET_HASH = '3a6ae36613f5be90056a9419e62f759145ba372808045f7ec0c457ea4a3fd3ad';
       const AUTH_KEY = 'projectDashboardAuth';
       const WELCOME_KEY = 'projectDashboardWelcomeName';
       const ACTIVE_USER_KEY = 'projectDashboardActiveUser';
@@ -124,6 +124,30 @@
 
       const form = document.getElementById('loginForm');
       const errorEl = document.getElementById('loginError');
+
+      const toHex = (buffer) => Array.from(new Uint8Array(buffer)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+
+      const fallbackHash = (value = '') => {
+        let hash = 0;
+        for (let i = 0; i < value.length; i += 1) {
+          hash = ((hash << 5) - hash) + value.charCodeAt(i);
+          hash |= 0;
+        }
+        return hash.toString(16);
+      };
+
+      const digestText = async (value = '') => {
+        if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(value);
+          const hash = await window.crypto.subtle.digest('SHA-256', data);
+          return toHex(hash);
+        }
+        return fallbackHash(value);
+      };
+
+      const normalizeUsername = (value = '') => value.trim().toLowerCase();
+      const buildSecretHash = (username, password) => digestText(`${normalizeUsername(username)}:${password}`);
 
       const loadAccounts = () => {
         try {
@@ -143,17 +167,31 @@
         }
       };
 
-      const normalizeAccounts = () => {
-        const accounts = loadAccounts();
-        const hasDefault = accounts.some((account) => account.username && account.username.toLowerCase() === DEFAULT_ACCOUNT.username.toLowerCase());
-        if (!hasDefault) {
-          accounts.unshift({ ...DEFAULT_ACCOUNT, system: true });
-          saveAccounts(accounts);
+      const sanitizeAccounts = async (records) => {
+        let changed = false;
+        const sanitized = [];
+        for (const record of records) {
+          const username = (record?.username || '').trim();
+          if (!username) { continue; }
+          if (record.system) {
+            changed = true;
+            continue;
+          }
+          if (record.secretHash) {
+            sanitized.push({ username, secretHash: record.secretHash });
+            continue;
+          }
+          if (record.password) {
+            const secretHash = await buildSecretHash(username, record.password);
+            sanitized.push({ username, secretHash });
+            changed = true;
+          }
         }
-        return accounts;
+        if (changed) {
+          saveAccounts(sanitized);
+        }
+        return sanitized;
       };
-
-      let accounts = normalizeAccounts();
 
       const persistAuth = () => {
         try {
@@ -189,24 +227,43 @@
         }
       };
 
-      const findAccount = (username) => {
-        const target = username?.toLowerCase() || '';
-        return accounts.find((account) => account.username && account.username.toLowerCase() === target);
+      let accounts = await sanitizeAccounts(loadAccounts());
+
+      const refreshAccounts = async () => {
+        accounts = await sanitizeAccounts(loadAccounts());
       };
 
-      form.addEventListener('submit', (event) => {
+      const verifyCredentials = async (username, password) => {
+        const secretHash = await buildSecretHash(username, password);
+        const normalized = normalizeUsername(username);
+        const match = accounts.find((account) => account.username && normalizeUsername(account.username) === normalized && account.secretHash === secretHash);
+        if (match) {
+          return { ok: true, name: match.username };
+        }
+        if (secretHash === DEFAULT_SECRET_HASH) {
+          return { ok: true, name: username || 'System Admin' };
+        }
+        return { ok: false };
+      };
+
+      form.addEventListener('submit', async (event) => {
         event.preventDefault();
         errorEl.textContent = '';
-        accounts = normalizeAccounts();
+        await refreshAccounts();
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
 
-        const account = findAccount(username);
+        if (!username || !password) {
+          errorEl.textContent = 'Enter both a username and password.';
+          return;
+        }
 
-        if (account && account.password === password) {
+        const result = await verifyCredentials(username, password);
+
+        if (result.ok) {
           persistAuth();
-          persistWelcome(account.username);
-          persistActiveUser(account.username);
+          persistWelcome(result.name);
+          persistActiveUser(result.name);
           window.location.href = redirectTarget;
         } else {
           errorEl.textContent = 'Invalid credentials. Try again or create a new account from Add user account.';

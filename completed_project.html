@@ -197,28 +197,17 @@
         listProjects,
         loadProjectState,
         fmtDate,
-        getSectionPercent,
-        SECTION_ORDER,
         SECTION_DEFS,
-        isSectionEnabled
+        getEnabledSections,
+        isProjectCompleted
       } = window.ProjectData;
 
       const state = loadProjectState();
       const listEl = document.getElementById('completedList');
       const emptyState = document.getElementById('emptyState');
 
-      const isProjectCompleted = (project) => {
-        if (!project) { return false; }
-        const activeKeys = SECTION_ORDER.filter((key) => isSectionEnabled(project, key));
-        if (!activeKeys.length) { return false; }
-        return activeKeys.every((key) => {
-          const section = project.sections ? project.sections[key] : null;
-          return section && getSectionPercent(section) === 100;
-        });
-      };
-
       const formatSections = (project) => {
-        const activeKeys = SECTION_ORDER.filter((key) => isSectionEnabled(project, key));
+        const activeKeys = getEnabledSections(project);
         return activeKeys.map((key) => SECTION_DEFS[key]?.title || key);
       };
 

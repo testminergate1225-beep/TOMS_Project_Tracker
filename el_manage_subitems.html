@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>Electrical Section — Project Developments</title>
+	<title>Electronics Manage Sub-items — Project Developments</title>
 	<style>
 		:root {
 			--bg: #0f172a;
@@ -217,14 +217,76 @@
 			transform: rotate(15deg);
 			pointer-events: none;
 		}
+        .manager-controls {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #1f2937;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.manager-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+.manager-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  margin: 12px 0 0;
+}
+.track-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+	margin-bottom: 10px;
+}
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.chip-accent {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+.chip-muted {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--muted);
+}
+.btn.ghost {
+  background: transparent;
+  border: 1px dashed #1f2937;
+  color: var(--text);
+  box-shadow: none;
+}
 	</style>
 </head>
 <body>
 	<header class="section-header">
 		<div>
 			<p class="eyebrow" id="projectName">Project Developments</p>
-			<h1 id="sectionTitle">Electrical Section</h1>
-			<p class="subtitle" id="sectionTagline">Panelboards, fixtures, and controls delivery burndown.</p>
+			<h1 id="sectionTitle">Electronics Section Manager</h1>
+			<p class="subtitle" id="sectionTagline">CCTV and Security Systems delivery burndown.</p>
 		</div>
 		<div class="toolbar detail">
 			<span class="pill">Last update: <span id="lastUpdate">—</span></span>
@@ -243,6 +305,19 @@
 				<span class="value" id="sectionCount">0</span>
 			</div>
 		</section>
+        <section class="manager-controls">
+  <div class="manager-row">
+    <label class="toggle">
+      <input type="checkbox" id="toggleHideUntracked" />
+      <span>Hide untracked sub-items</span>
+    </label>
+    <p class="manager-hint">
+      Untracked entries stay in your template but won’t be cloned into new projects.
+    </p>
+  </div>
+</section>
+<p class="empty-state" id="emptyItems" hidden>No sub-items match this filter.</p>
+
 
 		<section class="grid" id="itemsGrid"></section>
 	</main>
@@ -250,9 +325,9 @@
 	<script src="state.js"></script>
 	<script>
 		(function () {
-			const SECTION_KEY = 'electrical';
-			const HEADLINE = 'Electrical Section';
-			const TAGLINE = 'Panelboards, fixtures, and controls delivery burndown.';
+			const SECTION_KEY = 'electronics';
+			const HEADLINE = 'Electronics Section Manager';
+			const TAGLINE = 'CCTV and Security Systems delivery burndown.';
 
 			const {
 				loadProjectState,
@@ -261,7 +336,6 @@
 				clamp,
 				fmtDate,
 				statusClass,
-				getSectionPercent,
 				getActiveProject,
 				touchProject,
 				appendUpdateLog,
@@ -288,12 +362,27 @@
 
 			const buildCards = () => {
 				if (!grid) { return; }
-				grid.innerHTML = section.items.map((item) => `
+				const visibleItems = getVisibleItems();
+				if (!visibleItems.length) {
+					grid.innerHTML = '';
+					emptyState?.removeAttribute('hidden');
+					return;
+				}
+				emptyState?.setAttribute('hidden', '');
+				grid.innerHTML = visibleItems.map((item) => `
 					<article class="card" data-item="${item.id}">
 						<header>
 							<div class="title">${item.title}</div>
 							<div class="status" id="status-${item.id}">—</div>
 						</header>
+						<div class="track-row">
+							<span class="chip ${item.tracked === false ? 'chip-muted' : 'chip-accent'}" id="chip-${item.id}">
+								${item.tracked === false ? 'Untracked' : 'Tracked'}
+							</span>
+							<button class="btn ghost" data-track="${item.id}">
+								${item.tracked === false ? 'Mark as tracked' : 'Hide this sub-item'}
+							</button>
+						</div>
 						<div class="progress-wrap">
 							<div class="progress-value">
 								<span class="label">Completeness</span>
@@ -305,13 +394,67 @@
 						</div>
 						<div class="controls">
 							<input class="input" type="number" min="0" max="100" step="1"
-										 placeholder="Set % (0–100)" id="input-${item.id}" />
+								placeholder="Set % (0–100)" id="input-${item.id}" />
 							<button class="btn secondary" data-update="${item.id}">Update</button>
 						</div>
 						<div class="footnote">${item.notes || ''}</div>
 					</article>
 				`).join('');
 			};
+
+            const HIDE_PREF_KEY = 'electronicsManageHideUntracked';
+            const hideToggle = document.getElementById('toggleHideUntracked');
+            const emptyState = document.getElementById('emptyItems');
+
+            const readHidePref = () => {
+                try { return window.localStorage.getItem(HIDE_PREF_KEY) === '1'; }
+                catch (error) { return false; }
+            };
+            const persistHidePref = (value) => {
+                try { window.localStorage.setItem(HIDE_PREF_KEY, value ? '1' : '0'); }
+                catch (error) { /* ignore */ }
+            };
+
+            let hideUntracked = readHidePref();
+            if (hideToggle) hideToggle.checked = hideUntracked;
+
+            const getVisibleItems = () =>
+                hideUntracked ? section.items.filter((item) => item.tracked !== false) : section.items;
+
+			const computeTrackedPercent = () => {
+				const trackedItems = section.items.filter((item) => item.tracked !== false);
+				if (!trackedItems.length) { return 0; }
+				const total = trackedItems.reduce((sum, item) => sum + clamp(Number(item.percent) || 0, 0, 100), 0);
+				return Math.round(total / trackedItems.length);
+			};
+
+            const toggleTracked = (id) => {
+                const target = section.items.find((item) => item.id === id);
+                if (!target) { return; }
+
+                if (target.tracked !== false) {
+                    if (!window.confirm('Hide this sub-item from future projects?')) {
+                        return;
+                }
+                target.tracked = false;
+                } else {
+                target.tracked = true;
+                }
+
+                touchProject(project);
+                persistProjectState(state);
+                buildCards();
+                render();
+                };
+
+                hideToggle?.addEventListener('change', () => {
+                    hideUntracked = hideToggle.checked;
+                    persistHidePref(hideUntracked);
+                    buildCards();
+                    render();
+                });
+
+
 
 			const render = () => {
 				section.items.forEach((item) => {
@@ -336,12 +479,13 @@
 
 				const sectionPercent = document.getElementById('sectionPercent');
 				if (sectionPercent) {
-					sectionPercent.textContent = getSectionPercent(section) + '%';
+					sectionPercent.textContent = computeTrackedPercent() + '%';
 				}
 
 				const sectionCount = document.getElementById('sectionCount');
 				if (sectionCount) {
-					sectionCount.textContent = section.items.length;
+					const trackedCount = section.items.filter((item) => item.tracked !== false).length;
+					sectionCount.textContent = trackedCount;
 				}
 
 				const lastUpdateEl = document.getElementById('lastUpdate');
@@ -390,13 +534,19 @@
 			};
 
 			const wire = () => {
-				if (grid) {
-					grid.addEventListener('click', (event) => {
-						const button = event.target.closest('[data-update]');
-						if (!button) { return; }
-						handleUpdate(button.getAttribute('data-update'));
-					});
-				}
+				if (!grid) { return; }
+				grid.addEventListener('click', (event) => {
+					const trackButton = event.target.closest('[data-track]');
+					if (trackButton) {
+						event.preventDefault();
+						toggleTracked(trackButton.getAttribute('data-track'));
+						return;
+					}
+					const updateButton = event.target.closest('[data-update]');
+					if (updateButton) {
+						handleUpdate(updateButton.getAttribute('data-update'));
+					}
+				});
 			};
 
 			buildCards();

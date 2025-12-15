@@ -263,7 +263,9 @@
 				statusClass,
 				getSectionPercent,
 				getActiveProject,
-				touchProject
+				touchProject,
+				appendUpdateLog,
+				getActiveUserName
 			} = window.ProjectData;
 
 			let state = loadProjectState();
@@ -379,6 +381,12 @@
 				if (!target) { return; }
 				target.percent = next;
 				touchProject(project);
+				appendUpdateLog({
+					user: getActiveUserName(),
+					project: project.title || 'Project Developments',
+					section: SECTION_DEFS[SECTION_KEY]?.title || SECTION_KEY,
+					item: target.title || id
+				});
 				persistProjectState(state);
 				render();
 			};

@@ -71,7 +71,7 @@
     }
     .project-switcher .switcher-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: auto minmax(0, 1fr);
       gap: 12px;
       align-items: center;
     }
@@ -308,6 +308,24 @@
       gap: 12px;
     }
 
+    .empty-state {
+      max-width: 1120px;
+      margin: 24px auto 0;
+      padding: 24px;
+      border-radius: var(--radius);
+      border: 1px dashed #1f2937;
+      background: rgba(11, 19, 37, 0.8);
+      text-align: center;
+      color: var(--muted);
+    }
+    .empty-state__actions {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
     .card {
       grid-column: span 4;
       background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
@@ -319,6 +337,72 @@
       gap: 14px;
       position: relative;
       overflow: hidden;
+    }
+
+    .card.overview {
+      grid-column: span 12;
+      padding: 24px;
+      gap: 18px;
+    }
+    @media (max-width: 960px) {
+      .card.overview { grid-column: span 6; }
+    }
+    @media (max-width: 640px) {
+      .card.overview { grid-column: span 1; }
+    }
+
+    .overview-label {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+
+    .overview-metric {
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .overview-metric .metric-label {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .overview-metric .metric-value {
+      margin: 0;
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #93c5fd;
+    }
+
+    .overview-metric .metric-hint {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .overview-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .overview-meta strong {
+      color: var(--text);
     }
 
     .card header {
@@ -422,8 +506,8 @@
   <div class="project-switcher" role="region" aria-label="Saved projects">
     <div class="switcher-row">
       <label class="sr-only" for="projectSelect">Saved projects</label>
-      <select class="select" id="projectSelect" aria-label="Saved projects"></select>
       <button class="btn secondary" id="sectionPickerToggle" aria-expanded="false" aria-controls="sectionPicker">Project Selection</button>
+      <select class="select" id="projectSelect" aria-label="Saved projects"></select>
     </div>
     <p class="helper">Project updates are managed in the secure dashboard. This view reflects the active project only.</p>
     <div class="section-picker" id="sectionPicker" hidden role="region" aria-label="Select sections">
@@ -467,9 +551,11 @@
       <div class="info-trigger">
         <button class="btn secondary" id="projectInfoToggle" aria-expanded="false" aria-controls="projectInfoMenu">Project Info</button>
         <div class="info-menu" id="projectInfoMenu" hidden>
-          <button class="menu-item" data-route="electrical.html">Electrical Section</button>
-          <button class="menu-item" data-route="architectural.html">Architectural Section</button>
-          <button class="menu-item" data-route="mechanical.html">Mechanical Section</button>
+          <button class="menu-item" data-route="e_manage_subitems.html">Electrical Section Manager</button>
+          <button class="menu-item" data-route="a_manage_subitems.html">Architectural Section Manager</button>
+          <button class="menu-item" data-route="m_manage_subitems.html">Mechanical Section Manager</button>
+          <button class="menu-item" data-route="p_manage_subitems.html">Plumbing Section Manager</button>
+          <button class="menu-item" data-route="el_manage_subitems.html">Electronics Section Manager</button>
         </div>
       </div>
     </div>
@@ -477,6 +563,36 @@
 
   <main>
     <section class="grid" id="cards">
+      <article class="card overview" id="overviewCard" aria-live="polite">
+        <header>
+          <div>
+            <p class="overview-label">Active Project</p>
+            <h2 class="title" id="overviewProjectName">Overview</h2>
+          </div>
+          <div class="status" id="overviewStatus">—</div>
+        </header>
+        <div class="overview-grid">
+          <div class="overview-metric">
+            <p class="metric-label">Total Completeness</p>
+            <p class="metric-value" id="overviewPercent">0%</p>
+            <p class="metric-hint">Tracked sections only</p>
+          </div>
+          <div class="overview-metric">
+            <p class="metric-label">Sections Active</p>
+            <p class="metric-value" id="overviewSectionCount">0</p>
+            <p class="metric-hint" id="overviewSectionHelper">of 0 enabled</p>
+          </div>
+          <div class="overview-metric">
+            <p class="metric-label">Tracked Items</p>
+            <p class="metric-value" id="overviewTrackedCount">0</p>
+            <p class="metric-hint">Monitoring checkpoints</p>
+          </div>
+        </div>
+        <div class="overview-meta">
+          <span>Updated <strong id="overviewLastUpdated">—</strong></span>
+          <span>by <strong id="overviewUpdatedBy">—</strong></span>
+        </div>
+      </article>
       <article class="card" data-key="electrical">
         <header>
           <div class="title">Electrical</div>
@@ -484,7 +600,7 @@
         </header>
         <div class="meta">
           <span>Lead: E-Team</span>
-          <span>Scope: LV/MV, Lighting, Controls</span>
+          <span>Scope: Lighting, Power and Controls</span>
         </div>
         <div class="progress-wrap">
           <div class="progress-value">
@@ -548,11 +664,68 @@
         </div>
         <div class="footnote">Air systems, hydronics, suppression, and automation metrics.</div>
       </article>
+      
+      <article class="card" data-key="plumbing">
+        <header>
+          <div class="title">Plumbing</div>
+          <div class="status" id="status-plumbing">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: P-Team</span>
+          <span>Scope: Pipes, Fixtures, Valves</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-plumbing">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Plumbing progress">
+            <div class="progress-fill" id="bar-plumbing"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="plumbing">Open Section</button>
+        </div>
+        <div class="footnote">Water supply, drainage, and fixture installations tracked here.</div>
+      </article>
+
+      <article class="card" data-key="electronics">
+        <header>
+          <div class="title">Electronics</div>
+          <div class="status" id="status-electronics">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: EL-Team</span>
+          <span>Scope: Circuitry, Devices, Controls</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-electronics">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Electronics progress">
+            <div class="progress-fill" id="bar-electronics"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="electronics">Open Section</button>
+        </div>
+        <div class="footnote">Circuitry, devices, and control systems monitored here.</div>
+      </article>
+
     </section>
+
     <div class="page-actions">
       <button class="btn" id="viewCompletedProjects">Completed Projects</button>
+      <button class="btn" id="viewLogs">View Logs</button>
       <button class="btn" id="modifyProject">Modify Project</button>
     </div>
+    <section class="empty-state" id="noActiveProjects" hidden>
+      <p>All saved projects have reached 100% completeness. Visit Completed Projects to review the final record.</p>
+      <div class="empty-state__actions">
+        <button class="btn" id="emptyCompletedProjects" type="button">Completed Projects</button>
+      </div>
+    </section>
   </main>
 
   <script src="state.js"></script>
@@ -570,7 +743,9 @@
         setActiveProject,
         listProjects,
         touchProject,
-        isSectionEnabled
+        isSectionEnabled,
+        isProjectCompleted,
+        getEnabledSections
       } = window.ProjectData;
 
       let state = loadProjectState();
@@ -602,7 +777,7 @@
       };
 
       const guardPublicButtons = () => {
-        const ALLOWED_IDS = new Set(['loginButton', 'addUserButton']);
+        const ALLOWED_IDS = new Set(['loginButton', 'addUserButton', 'viewLogs']);
         document.addEventListener('click', (event) => {
           const button = event.target.closest('button');
           if (!button) { return; }
@@ -613,19 +788,27 @@
         }, true);
       };
 
-      const FALLBACK_SECTION_KEYS = ['electrical', 'architectural', 'mechanical'];
+      const FALLBACK_SECTION_KEYS = ['electrical', 'architectural', 'mechanical','plumbing', 'electronics'];
       const FALLBACK_METADATA = {
         electrical: {
-          title: 'Electrical Section',
+          title: 'Electrical Section Manager',
           summary: 'Power distribution, lighting, and control scopes.'
         },
         architectural: {
-          title: 'Architectural Section',
+          title: 'Architectural Section Manager',
           summary: 'Envelope, interior finishes, and public realm.'
         },
         mechanical: {
-          title: 'Mechanical Section',
+          title: 'Mechanical Section Manager',
           summary: 'HVAC, plumbing, and fire protection packages.'
+        },
+        plumbing: {
+          title: 'Plumbing Section Manager',
+          summary: 'Water supply, drainage, and fixture installations tracked here.'
+        },
+        electronics: {
+          title: 'Electronics Section Manager',
+          summary: 'Circuitry, devices, and control systems monitored here.'
         },
         custom: {
           title: 'Custom Section',
@@ -770,7 +953,114 @@
         return new Set(pending);
       };
 
-      const currentProject = () => getActiveProject(state);
+      const resetOverviewCard = () => {
+        const statusEl = document.getElementById('overviewStatus');
+        if (statusEl) {
+          statusEl.textContent = '—';
+          statusEl.classList.remove('ontrack', 'atrisk', 'delayed', 'started');
+        }
+        const defaults = {
+          overviewPercent: '0%',
+          overviewSectionCount: '0',
+          overviewSectionHelper: 'of 0 enabled',
+          overviewTrackedCount: '0',
+          overviewLastUpdated: '—',
+          overviewUpdatedBy: '—',
+          overviewProjectName: 'Overview'
+        };
+        Object.entries(defaults).forEach(([id, value]) => {
+          const el = document.getElementById(id);
+          if (el) { el.textContent = value; }
+        });
+      };
+
+      const computeOverviewStats = (project, selectionFilter) => {
+        const enabledKeys = getEnabledSections(project);
+        const filteredKeys = enabledKeys.filter((key) => {
+          if (selectionFilter && !selectionFilter.has(key)) { return false; }
+          return Boolean(project.sections[key]);
+        });
+        const sections = filteredKeys.map((key) => project.sections[key]).filter(Boolean);
+        const percent = sections.length
+          ? Math.round(sections.reduce((sum, section) => sum + getSectionPercent(section), 0) / sections.length)
+          : 0;
+        const trackedItems = sections.reduce((sum, section) => {
+          if (!section || !Array.isArray(section.items)) { return sum; }
+          return sum + section.items.filter((item) => item.tracked !== false).length;
+        }, 0);
+        return {
+          percent,
+          status: statusClass(percent),
+          sections: sections.length,
+          totalSections: enabledKeys.length,
+          trackedItems
+        };
+      };
+
+      const updateOverviewCard = (project, stats, hasFilter) => {
+        const projectNameEl = document.getElementById('overviewProjectName');
+        if (projectNameEl) {
+          projectNameEl.textContent = project.title || 'Active Project';
+        }
+
+        const percentEl = document.getElementById('overviewPercent');
+        if (percentEl) {
+          percentEl.textContent = `${stats.percent}%`;
+        }
+
+        const statusEl = document.getElementById('overviewStatus');
+        if (statusEl) {
+          statusEl.textContent = stats.status.text;
+          statusEl.classList.remove('ontrack', 'atrisk', 'delayed', 'started');
+          statusEl.classList.add(stats.status.cls);
+        }
+
+        const sectionCountEl = document.getElementById('overviewSectionCount');
+        if (sectionCountEl) {
+          sectionCountEl.textContent = stats.sections.toString();
+        }
+
+        const helperEl = document.getElementById('overviewSectionHelper');
+        if (helperEl) {
+          helperEl.textContent = hasFilter
+            ? `Filtered from ${stats.totalSections} enabled`
+            : `${stats.totalSections} enabled sections`;
+        }
+
+        const trackedEl = document.getElementById('overviewTrackedCount');
+        if (trackedEl) {
+          trackedEl.textContent = stats.trackedItems.toString();
+        }
+
+        const updatedEl = document.getElementById('overviewLastUpdated');
+        if (updatedEl) {
+          updatedEl.textContent = project.lastUpdate
+            ? fmtDate(new Date(project.lastUpdate))
+            : '—';
+        }
+
+        const updatedByEl = document.getElementById('overviewUpdatedBy');
+        if (updatedByEl) {
+          updatedByEl.textContent = project.lastUpdatedBy || 'System';
+        }
+      };
+
+      const getEditableProjects = () => listProjects(state)
+        .filter((project) => !isProjectCompleted(project));
+
+      const currentProject = () => {
+        const active = getActiveProject(state);
+        if (active && !isProjectCompleted(active)) {
+          return active;
+        }
+        const fallback = getEditableProjects()[0];
+        if (fallback) {
+          setActiveProject(state, fallback.id);
+          persistProjectState(state);
+          return fallback;
+        }
+        return null;
+      };
 
       let isEditingTitle = false;
 
@@ -807,6 +1097,25 @@
         }
       };
 
+      const toggleEmptyState = (hasProject) => {
+        const cards = document.getElementById('cards');
+        const actions = document.querySelector('.page-actions');
+        const emptyState = document.getElementById('noActiveProjects');
+        const editButton = document.getElementById('editTitleBtn');
+        if (cards) {
+          cards.toggleAttribute('hidden', !hasProject);
+        }
+        if (actions) {
+          actions.toggleAttribute('hidden', !hasProject);
+        }
+        if (emptyState) {
+          emptyState.toggleAttribute('hidden', hasProject);
+        }
+        if (editButton) {
+          editButton.disabled = !hasProject;
+        }
+      };
+
       const showWelcomeMessage = () => {
         const banner = document.getElementById('welcomeBanner');
         if (!banner) { return; }
@@ -835,23 +1144,46 @@
         }
       };
 
-      const syncProjectSelect = () => {
+      const syncProjectSelect = (activeProject) => {
         const select = document.getElementById('projectSelect');
         if (!select) { return; }
-        const active = currentProject();
-        const options = listProjects(state)
+        const projects = getEditableProjects();
+        if (!projects.length) {
+          select.innerHTML = '<option value="" disabled>No active projects available</option>';
+          select.value = '';
+          select.disabled = true;
+          return;
+        }
+        select.disabled = false;
+        select.innerHTML = projects
           .map((project) => `<option value="${project.id}">${project.title}</option>`)
           .join('');
-        select.innerHTML = options;
-        if (active) {
-          select.value = active.id;
+        if (activeProject) {
+          select.value = activeProject.id;
+        } else {
+          select.value = projects[0].id;
         }
       };
 
       const render = () => {
         const project = currentProject();
-        if (!project) { return; }
+        const hasProject = Boolean(project);
+        toggleEmptyState(hasProject);
         const selectionFilter = computeSelectionFilter();
+        if (!project) {
+          const titleEl = document.getElementById('projectTitle');
+          if (titleEl) { titleEl.textContent = 'No active project'; }
+          const lastUpdateEl = document.getElementById('lastUpdate');
+          if (lastUpdateEl) { lastUpdateEl.textContent = '—'; }
+          const input = document.getElementById('titleInput');
+          if (input && !isEditingTitle) {
+            input.value = '';
+          }
+          resetOverviewCard();
+          applyTitleEditorState();
+          syncProjectSelect(null);
+          return;
+        }
         SECTION_ORDER.forEach((key) => {
           const card = document.querySelector(`[data-key="${key}"]`);
           const enabled = isSectionEnabled(project, key);
@@ -892,6 +1224,9 @@
           }
         });
 
+        const overviewStats = computeOverviewStats(project, selectionFilter);
+        updateOverviewCard(project, overviewStats, Boolean(selectionFilter));
+
         const lastUpdateEl = document.getElementById('lastUpdate');
         if (lastUpdateEl) {
           lastUpdateEl.textContent = fmtDate(new Date(project.lastUpdate));
@@ -907,7 +1242,7 @@
 
         applyTitleEditorState();
 
-        syncProjectSelect();
+        syncProjectSelect(project);
       };
 
       const saveAndRender = () => {
@@ -975,7 +1310,11 @@
           button.addEventListener('click', () => {
             const key = button.getAttribute('data-open');
             const project = currentProject();
-            const section = project?.sections[key];
+            if (!project) {
+              alert('All saved projects are complete. Visit Completed Projects for final summaries.');
+              return;
+            }
+            const section = project.sections[key];
             window.location.href = section?.file || `${key}.html`;
           });
         });
@@ -1021,6 +1360,7 @@
         const projectSelect = document.getElementById('projectSelect');
         if (projectSelect) {
           projectSelect.addEventListener('change', () => {
+            if (projectSelect.disabled) { return; }
             setActiveProject(state, projectSelect.value);
             closeTitleEditor();
             saveAndRender();
@@ -1071,6 +1411,20 @@
         const completedProjectsBtn = document.getElementById('viewCompletedProjects');
         if (completedProjectsBtn) {
           completedProjectsBtn.addEventListener('click', () => {
+            window.location.href = 'completed_project.html';
+          });
+        }
+
+        const viewLogsBtn = document.getElementById('viewLogs');
+        if (viewLogsBtn) {
+          viewLogsBtn.addEventListener('click', () => {
+            window.location.href = 'user_update_logs.html';
+          });
+        }
+
+        const emptyStateCompletedBtn = document.getElementById('emptyCompletedProjects');
+        if (emptyStateCompletedBtn) {
+          emptyStateCompletedBtn.addEventListener('click', () => {
             window.location.href = 'completed_project.html';
           });
         }
